@@ -25,6 +25,9 @@ docs/agents/*.md
 metrics.jsonl
 *.local.jsonl
 
+# Per-session handoff docs (ephemeral, written by /handoff skill)
+HANDOFF-*.md
+
 # Editor / OS
 .DS_Store
 .vscode/
