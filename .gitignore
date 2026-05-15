@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# venv
+.venv/
+venv/
+env/
+
+# Dev tooling — mattpocock per-repo dev config (gitignored, not part of public surface)
+CLAUDE.local.md
+docs/agents/*.md
+!docs/agents/README.md
+.scratch/
+
+# Local accumulated data (lives under ~/.claude/, never in repo)
+metrics.jsonl
+*.local.jsonl
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
