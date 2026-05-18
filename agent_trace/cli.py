@@ -138,26 +138,89 @@ def _print_channels(cb: dict[str, int], records: list[dict]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="agent-trace")
+    p = argparse.ArgumentParser(
+        prog="agent-trace",
+        description=(
+            "Cross-agent telemetry pipeline. Parses AI coding agent transcripts "
+            "into a normalized event stream and surfaces skill usage, channel "
+            "breakdown (auto vs slash), and dead-skill detection."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  # One-shot backfill of all Claude Code transcripts\n"
+            "  agent-trace backfill --adapter claude-code\n"
+            "\n"
+            "  # Three diagnostic views (no --adapter; reads normalized metrics)\n"
+            "  agent-trace report channels       # auto vs slash ratio\n"
+            "  agent-trace report usage          # per-skill channel breakdown\n"
+            "  agent-trace report dead-skills    # skills never invoked\n"
+            "\n"
+            "  # Single-file ingest (intended for SessionEnd hook pipelines)\n"
+            "  agent-trace ingest --adapter claude-code <transcript.jsonl>\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    ingest = sub.add_parser("ingest", help="emit one session record from one transcript")
+    ingest = sub.add_parser(
+        "ingest",
+        help="emit one session record from one transcript",
+        description=(
+            "Parse a single transcript and emit one per-session JSON record to "
+            "stdout. Designed to be invoked from a SessionEnd hook:\n"
+            "  agent-trace ingest --adapter claude-code \"$TRANSCRIPT\" "
+            ">> ~/.claude/metrics.jsonl"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     ingest.add_argument("--adapter", required=True, choices=sorted(ADAPTERS))
-    ingest.add_argument("transcript")
+    ingest.add_argument("transcript", help="path to a single transcript file")
     ingest.set_defaults(func=cmd_ingest)
 
-    backfill = sub.add_parser("backfill", help="scan all transcripts for the adapter")
+    backfill = sub.add_parser(
+        "backfill",
+        help="scan all transcripts for the adapter",
+        description=(
+            "Walk all known transcripts for the chosen adapter and append one "
+            "per-session record to metrics.jsonl. Idempotent — the report "
+            "layer deduplicates by session_id at read time."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     backfill.add_argument("--adapter", required=True, choices=sorted(ADAPTERS))
-    backfill.add_argument("--out", help="metrics.jsonl path (default ~/.claude/metrics.jsonl)")
+    backfill.add_argument(
+        "--out",
+        help="metrics.jsonl output path (default: ~/.claude/metrics.jsonl)",
+    )
     backfill.set_defaults(func=cmd_backfill)
 
-    report = sub.add_parser("report", help="aggregate views over metrics.jsonl")
-    report.add_argument("kind", choices=["usage", "dead-skills", "channels"])
-    report.add_argument("--metrics", help="metrics.jsonl path")
+    report = sub.add_parser(
+        "report",
+        help="aggregate views over metrics.jsonl",
+        description=(
+            "Read metrics.jsonl and print one of three diagnostic views. "
+            "Does NOT take --adapter — metrics.jsonl is already adapter-"
+            "agnostic by construction.\n"
+            "\n"
+            "  channels      total auto vs slash invocations across sessions\n"
+            "  usage         per-skill table with channel split\n"
+            "  dead-skills   whitelisted skills that have never been invoked"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    report.add_argument(
+        "kind",
+        choices=["usage", "dead-skills", "channels"],
+        help="which view to print",
+    )
+    report.add_argument(
+        "--metrics",
+        help="metrics.jsonl path (default: ~/.claude/metrics.jsonl)",
+    )
     report.add_argument(
         "--no-filter",
         action="store_true",
-        help="usage report: include built-ins / unknown names",
+        help="usage report only: include built-ins / unknown names not in the whitelist",
     )
     report.set_defaults(func=cmd_report)
 

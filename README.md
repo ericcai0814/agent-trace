@@ -39,6 +39,20 @@ agent-trace ingest --adapter claude-code <path-to-transcript.jsonl>
 
 `agent-trace` 是回答這些問題的工具。
 
+## How it works
+
+```
+transcript.jsonl
+    ↓ (adapter.parse)
+NormalizedEvent stream
+    ↓ (aggregate.session_record)
+per-session dict
+    ↓ (storage.append)
+~/.claude/metrics.jsonl
+    ↓ (storage.read_all → aggregate.usage_table/dead_skills/channel_breakdown)
+report 表格
+```
+
 ## Roadmap
 
 - [ ] Phase 0 — `NormalizedEvent` schema 與 ABI 凍結
