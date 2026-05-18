@@ -4,7 +4,30 @@
 
 ## Status
 
-🚧 早期規劃中。Phase 0：schema 設計與 Claude Code adapter。
+🚧 Phase 1 — Claude Code adapter 與 CLI 已可運作。SessionEnd hook 自動串接屬 Phase 2。
+
+## Quick start
+
+```bash
+git clone <repo> && cd agent-trace
+python3.13 -m venv .venv
+.venv/bin/pip install -e .
+
+# Backfill 既有 transcripts → ~/.claude/metrics.jsonl
+agent-trace backfill --adapter claude-code
+
+# 看 skill 使用表（按 channel 拆開 auto vs slash）
+agent-trace report usage
+
+# 看 channel 分布總計
+agent-trace report channels
+
+# 看哪些 skill 從沒被觸發過
+agent-trace report dead-skills
+
+# 單檔 ingest，可直接接 SessionEnd hook
+agent-trace ingest --adapter claude-code <path-to-transcript.jsonl>
+```
 
 ## Why
 

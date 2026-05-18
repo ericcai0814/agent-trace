@@ -1,6 +1,6 @@
 # agent-trace — Design & Decisions
 
-> **Status:** Phase 0 — schema design and planning. No business code yet.
+> **Status:** Phase 1 complete — Claude Code adapter, dual-channel detection, CLI, and report views all shipped. SessionEnd hook wiring (Phase 2) and second adapter (Phase 3) remain.
 > **Last updated:** 2026-05-15
 
 ## Problem
@@ -116,7 +116,7 @@ class NormalizedEvent:
     agent: Literal["claude-code", "gemini-cli", "codex"]
     session_id: str
     project: str | None
-    event_type: Literal["tool_call", "skill_invoke", "subagent_spawn", "user_prompt"]
+    event_type: Literal["tool_call", "skill_invoke", "subagent_spawn", "user_prompt", "assistant_message"]
 
     tool_name: str | None
     skill_name: str | None
@@ -132,6 +132,8 @@ class NormalizedEvent:
 **Alternative considered.** Polymorphic event classes (`ToolCallEvent`, `SkillInvokeEvent`, etc.). Rejected — adds class explosion for marginal type safety; JSON serialization gets harder; pattern matching on `event_type` is sufficient and clearer.
 
 **Trade-off accepted.** Some fields are `None` for any given event type. Consumers must check `event_type` before accessing union members. Mitigated by helper functions and (eventually) `TypeGuard`-typed accessors.
+
+**Phase 1 extension.** Added `assistant_message` event_type. The aggregator needs to count assistant turns for per-session metrics, but a text-only assistant turn produces no `tool_call` / `skill_invoke` / `subagent_spawn` events to count. Adding an explicit per-turn marker keeps the aggregator agent-agnostic and matches the orphan extractor's `assistant_messages` field for cross-check parity (M1). Q1 ABI freeze applies to the augmented set.
 
 ---
 
@@ -267,8 +269,8 @@ This produces immediate historical metrics before any hook is wired. The subsequ
 
 | Phase | Scope | Status |
 |---|---|---|
-| **0** | Schema design, repo skeleton, planning docs | **This commit** |
-| **1** | Claude Code adapter + backfill CLI + aggregator with dual-channel detection | Next |
+| **0** | Schema design, repo skeleton, planning docs | Complete |
+| **1** | Claude Code adapter + backfill CLI + aggregator with dual-channel detection | **Complete** |
 | **2** | SessionEnd hook auto-ingest; retire orphan extractor (per M1) | After Phase 1 stable for 2 weeks |
 | **3** | Second adapter (Gemini or Codex), gated by Q2 criterion | Conditional |
 

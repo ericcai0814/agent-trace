@@ -24,3 +24,6 @@ classifiers = [
     "Topic :: Software Development",
     "Topic :: System :: Logging",
 ]
+
+[project.scripts]
+agent-trace = "agent_trace.cli:main"

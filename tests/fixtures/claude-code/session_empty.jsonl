@@ -1,0 +1,2 @@
+{"type":"user","sessionId":"empty-session","cwd":"/tmp/proj2","gitBranch":"main","timestamp":"2026-05-15T10:00:00.000Z","uuid":"e1","parentUuid":null,"isSidechain":false,"message":{"role":"user","content":"hello world"}}
+{"type":"assistant","sessionId":"empty-session","cwd":"/tmp/proj2","gitBranch":"main","timestamp":"2026-05-15T10:00:02.000Z","uuid":"e2","parentUuid":"e1","isSidechain":false,"message":{"role":"assistant","content":[{"type":"text","text":"Hi."}],"usage":{"input_tokens":10,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":3}}}
