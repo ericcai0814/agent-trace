@@ -1,9 +1,10 @@
 """agent-trace 命令列介面。
 
 子命令:
-  ingest    解析單一 transcript,將該 session 的 record 寫到 stdout
-  backfill  掃描指定 adapter 的所有 transcript,附加到 metrics.jsonl
-  reports   彙整 metrics.jsonl,印出 usage / dead-skill / channel 視圖
+  ingest        解析單一 transcript,將該 session 的 record 寫到 stdout
+  backfill      掃描指定 adapter 的所有 transcript,附加到 metrics.jsonl
+  reports       彙整 metrics.jsonl,印出 usage / dead-skill / channel 視圖
+  install-hook  將 SessionEnd hook 註冊到 ~/.claude/settings.json
 """
 
 from __future__ import annotations
@@ -11,7 +12,9 @@ from __future__ import annotations
 import argparse
 import glob
 import json
+import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
@@ -128,6 +131,83 @@ def _print_dead_skills(rows: list[dict]) -> None:
             print(f"  - {r['skill']}")
 
 
+HOOK_COMMAND = "agent-trace-hook-session-end"
+
+
+def _settings_path() -> Path:
+    override = os.environ.get("AGENT_TRACE_SETTINGS_PATH")
+    if override:
+        return Path(override)
+    return Path.home() / ".claude" / "settings.json"
+
+
+def _hook_already_installed(settings: dict) -> bool:
+    hooks_root = settings.get("hooks") if isinstance(settings.get("hooks"), dict) else {}
+    for entry in hooks_root.get("SessionEnd", []):
+        for hook in entry.get("hooks", []):
+            if HOOK_COMMAND in str(hook.get("command", "")):
+                return True
+    return False
+
+
+def cmd_install_hook(args: argparse.Namespace) -> int:
+    if args.adapter != "claude-code":
+        raise SystemExit(
+            f"install-hook only supports --adapter claude-code (got {args.adapter})"
+        )
+
+    settings_path = _settings_path()
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if settings_path.is_file():
+        try:
+            current = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            raise SystemExit(
+                f"refusing to modify malformed settings.json ({settings_path}): {e}"
+            )
+        if not isinstance(current, dict):
+            raise SystemExit(
+                f"refusing to modify non-object settings.json ({settings_path})"
+            )
+    else:
+        current = {}
+
+    if _hook_already_installed(current):
+        print(f"agent-trace SessionEnd hook already installed in {settings_path}")
+        return 0
+
+    hooks_root = current.setdefault("hooks", {})
+    if not isinstance(hooks_root, dict):
+        raise SystemExit(
+            f"refusing to modify settings.json: top-level 'hooks' is not an object"
+        )
+    new_entry = {
+        "matcher": "*",
+        "hooks": [{"type": "command", "command": HOOK_COMMAND}],
+    }
+    hooks_root.setdefault("SessionEnd", []).append(new_entry)
+
+    backup_path: Path | None = None
+    if settings_path.is_file():
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+        backup_path = settings_path.with_suffix(f".json.bak-{ts}")
+        backup_path.write_bytes(settings_path.read_bytes())
+
+    tmp_path = settings_path.with_suffix(".json.tmp")
+    tmp_path.write_text(
+        json.dumps(current, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    os.replace(tmp_path, settings_path)
+
+    print(f"installed agent-trace SessionEnd hook → {settings_path}")
+    if backup_path:
+        print(f"  backup: {backup_path}")
+    print(f"  command: {HOOK_COMMAND}")
+    return 0
+
+
 def _print_channels(cb: dict[str, int], records: list[dict]) -> None:
     print(f"sessions analyzed: {len(records)}")
     total = sum(cb.values()) or 1
@@ -222,6 +302,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="只用於 usage 視圖: 連同 whitelist 外的內建/未知名稱也一併列出",
     )
     report.set_defaults(func=cmd_report)
+
+    install = sub.add_parser(
+        "install-hook",
+        help="將 SessionEnd hook 註冊到 settings.json",
+        description=(
+            "將 agent-trace 的 SessionEnd hook 註冊到 ~/.claude/settings.json。"
+            "註冊後,每次 session 結束會自動把該 session 的 record 附加到 "
+            "metrics.jsonl。\n"
+            "\n"
+            "行為:\n"
+            "  - 若 settings.json 已存在,執行前會備份到 settings.json.bak-<ts>\n"
+            "  - 採 atomic write (透過 .tmp + rename),不會留下半寫狀態\n"
+            "  - 具備冪等性,重複執行不會重複新增 hook 條目\n"
+            "  - 修改前若偵測到 JSON 格式錯誤會 abort,不冒險覆寫"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    install.add_argument("--adapter", required=True, choices=sorted(ADAPTERS))
+    install.set_defaults(func=cmd_install_hook)
 
     return p
 
