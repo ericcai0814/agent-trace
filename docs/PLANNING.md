@@ -1,7 +1,7 @@
 # agent-trace — Design & Decisions
 
-> **Status:** Phase 1 complete — Claude Code adapter, dual-channel detection, CLI, and report views all shipped. SessionEnd hook wiring (Phase 2) and second adapter (Phase 3) remain.
-> **Last updated:** 2026-05-15
+> **Status:** Phase 2 complete — SessionEnd hook auto-ingest shipped via `agent-trace-hook-session-end` console script and `agent-trace install-hook` registrar. Orphan extractor retired. Second adapter (Phase 3) remains.
+> **Last updated:** 2026-05-19
 
 ## Problem
 
@@ -271,7 +271,7 @@ This produces immediate historical metrics before any hook is wired. The subsequ
 |---|---|---|
 | **0** | Schema design, repo skeleton, planning docs | Complete |
 | **1** | Claude Code adapter + backfill CLI + aggregator with dual-channel detection | **Complete** |
-| **2** | SessionEnd hook auto-ingest; retire orphan extractor (per M1) | After Phase 1 stable for 2 weeks |
+| **2** | SessionEnd hook auto-ingest; retire orphan extractor (per M1) | **Complete** |
 | **3** | Second adapter (Gemini or Codex), gated by Q2 criterion | Conditional |
 
 ### Phase 1 deliverables

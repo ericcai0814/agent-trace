@@ -4,29 +4,24 @@
 
 ## Status
 
-🚧 Phase 1 — Claude Code adapter 與 CLI 已可運作。SessionEnd hook 自動串接屬 Phase 2。
+✅ Phase 2 — Claude Code adapter、CLI、SessionEnd hook 自動串接全部完成。下一階段是第二個 adapter (Gemini CLI / Codex,Phase 3,條件性)。
 
 ## Quick start
 
 ```bash
-git clone <repo> && cd agent-trace
-python3.13 -m venv .venv
-.venv/bin/pip install -e .
+# 用 uv tool install (推薦) 或 pipx,讓 agent-trace 全域可用
+uv tool install git+https://github.com/ericcai0814/agent-trace.git
 
-# Backfill 既有 transcripts → ~/.claude/metrics.jsonl
+# 一次性 backfill 既有 transcripts → ~/.claude/metrics.jsonl
 agent-trace backfill --adapter claude-code
 
-# 看 skill 使用表（按 channel 拆開 auto vs slash）
-agent-trace reports usage
+# 註冊 SessionEnd hook,之後每次 session 結束自動 ingest
+agent-trace install-hook --adapter claude-code
 
-# 看 channel 分布總計
-agent-trace reports channels
-
-# 看哪些 skill 從沒被觸發過
-agent-trace reports dead-skills
-
-# 單檔 ingest，可直接接 SessionEnd hook
-agent-trace ingest --adapter claude-code <path-to-transcript.jsonl>
+# 三種診斷視圖 (不需要 --adapter,直接讀正規化資料)
+agent-trace reports channels       # auto vs slash 比例
+agent-trace reports usage          # 每個 skill 的 channel 拆解
+agent-trace reports dead-skills    # 從未被觸發的 skill
 ```
 
 ## Why
@@ -55,9 +50,9 @@ report 表格
 
 ## Roadmap
 
-- [ ] Phase 0 — `NormalizedEvent` schema 與 ABI 凍結
-- [ ] Phase 1 — Claude Code adapter + backfill + aggregator CLI
-- [ ] Phase 2 — SessionEnd hook 自動 ingest
+- [x] Phase 0 — `NormalizedEvent` schema 與 ABI 凍結
+- [x] Phase 1 — Claude Code adapter + backfill + aggregator CLI
+- [x] Phase 2 — SessionEnd hook 自動 ingest (`agent-trace install-hook`)
 - [ ] Phase 3 — Gemini CLI / Codex adapter（等實際使用時再寫）
 
 ## Design
