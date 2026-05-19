@@ -27,3 +27,4 @@ classifiers = [
 
 [project.scripts]
 agent-trace = "agent_trace.cli:main"
+agent-trace-hook-session-end = "agent_trace.hooks.session_end:main"

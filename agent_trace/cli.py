@@ -24,9 +24,9 @@ from agent_trace.core.aggregate import (
     usage_table,
 )
 from agent_trace.core.storage import (
-    DEFAULT_METRICS_PATH,
     append,
     dedupe_by_session_id,
+    default_metrics_path,
     read_all,
 )
 
@@ -57,7 +57,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 
 def cmd_backfill(args: argparse.Namespace) -> int:
     adapter = _get_adapter(args.adapter)
-    out_path = Path(args.out) if args.out else DEFAULT_METRICS_PATH
+    out_path = Path(args.out) if args.out else default_metrics_path()
 
     if args.adapter == "claude-code":
         sources: Iterable[str] = sorted(glob.glob(CLAUDE_CODE_TRANSCRIPT_GLOB))
@@ -80,7 +80,7 @@ def cmd_backfill(args: argparse.Namespace) -> int:
 
 
 def cmd_report(args: argparse.Namespace) -> int:
-    metrics_path = Path(args.metrics) if args.metrics else DEFAULT_METRICS_PATH
+    metrics_path = Path(args.metrics) if args.metrics else default_metrics_path()
     records = dedupe_by_session_id(read_all(metrics_path))
 
     if args.kind == "usage":

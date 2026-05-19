@@ -13,19 +13,25 @@ import os
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
-DEFAULT_METRICS_PATH = Path(
-    os.environ.get("AGENT_TRACE_METRICS_PATH")
-    or Path.home() / ".claude" / "metrics.jsonl"
-)
+def default_metrics_path() -> Path:
+    """Resolve ~/.claude/metrics.jsonl, honoring AGENT_TRACE_METRICS_PATH env."""
+    override = os.environ.get("AGENT_TRACE_METRICS_PATH")
+    if override:
+        return Path(override)
+    return Path.home() / ".claude" / "metrics.jsonl"
 
 
-def append(record: dict[str, Any], path: Path = DEFAULT_METRICS_PATH) -> None:
+def append(record: dict[str, Any], path: Path | None = None) -> None:
+    if path is None:
+        path = default_metrics_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as fp:
         fp.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def read_all(path: Path = DEFAULT_METRICS_PATH) -> Iterator[dict[str, Any]]:
+def read_all(path: Path | None = None) -> Iterator[dict[str, Any]]:
+    if path is None:
+        path = default_metrics_path()
     if not path.exists():
         return
     with open(path, "r", encoding="utf-8") as fp:
