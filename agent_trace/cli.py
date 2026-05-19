@@ -1,9 +1,9 @@
-"""agent-trace command-line interface.
+"""agent-trace 命令列介面。
 
-Subcommands:
-  ingest    parse one transcript, emit one session record to stdout
-  backfill  scan all known transcripts, append records to metrics.jsonl
-  report    aggregate metrics.jsonl into usage / dead-skill / channel views
+子命令:
+  ingest    解析單一 transcript,將該 session 的 record 寫到 stdout
+  backfill  掃描指定 adapter 的所有 transcript,附加到 metrics.jsonl
+  report    彙整 metrics.jsonl,印出 usage / dead-skill / channel 視圖
 """
 
 from __future__ import annotations
@@ -141,21 +141,21 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="agent-trace",
         description=(
-            "Cross-agent telemetry pipeline. Parses AI coding agent transcripts "
-            "into a normalized event stream and surfaces skill usage, channel "
-            "breakdown (auto vs slash), and dead-skill detection."
+            "跨 agent telemetry pipeline。將 AI coding agent 的 transcript "
+            "解析成正規化事件流,輸出 skill 使用量、channel 分布 (auto vs "
+            "slash) 與 dead-skill 偵測。"
         ),
         epilog=(
-            "Examples:\n"
-            "  # One-shot backfill of all Claude Code transcripts\n"
+            "範例:\n"
+            "  # 一次性把所有 Claude Code transcript 灌入 metrics.jsonl\n"
             "  agent-trace backfill --adapter claude-code\n"
             "\n"
-            "  # Three diagnostic views (no --adapter; reads normalized metrics)\n"
-            "  agent-trace report channels       # auto vs slash ratio\n"
-            "  agent-trace report usage          # per-skill channel breakdown\n"
-            "  agent-trace report dead-skills    # skills never invoked\n"
+            "  # 三種診斷視圖 (不需要 --adapter,直接讀正規化資料)\n"
+            "  agent-trace report channels       # auto vs slash 比例\n"
+            "  agent-trace report usage          # 每個 skill 的 channel 拆解\n"
+            "  agent-trace report dead-skills    # 從未被觸發的 skill\n"
             "\n"
-            "  # Single-file ingest (intended for SessionEnd hook pipelines)\n"
+            "  # 單檔 ingest (設計給 SessionEnd hook 串接)\n"
             "  agent-trace ingest --adapter claude-code <transcript.jsonl>\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -164,63 +164,62 @@ def build_parser() -> argparse.ArgumentParser:
 
     ingest = sub.add_parser(
         "ingest",
-        help="emit one session record from one transcript",
+        help="從單一 transcript 輸出一筆 session record",
         description=(
-            "Parse a single transcript and emit one per-session JSON record to "
-            "stdout. Designed to be invoked from a SessionEnd hook:\n"
+            "解析單一 transcript,將該 session 的 JSON record 寫到 stdout。"
+            "設計上預期由 SessionEnd hook 觸發:\n"
             "  agent-trace ingest --adapter claude-code \"$TRANSCRIPT\" "
             ">> ~/.claude/metrics.jsonl"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ingest.add_argument("--adapter", required=True, choices=sorted(ADAPTERS))
-    ingest.add_argument("transcript", help="path to a single transcript file")
+    ingest.add_argument("transcript", help="單一 transcript 檔案路徑")
     ingest.set_defaults(func=cmd_ingest)
 
     backfill = sub.add_parser(
         "backfill",
-        help="scan all transcripts for the adapter",
+        help="掃描該 adapter 的所有 transcript",
         description=(
-            "Walk all known transcripts for the chosen adapter and append one "
-            "per-session record to metrics.jsonl. Idempotent — the report "
-            "layer deduplicates by session_id at read time."
+            "走訪指定 adapter 所有已知的 transcript,把每個 session 的 "
+            "record 附加到 metrics.jsonl。具備冪等性—report 層在讀取時"
+            "會依 session_id 去重。"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     backfill.add_argument("--adapter", required=True, choices=sorted(ADAPTERS))
     backfill.add_argument(
         "--out",
-        help="metrics.jsonl output path (default: ~/.claude/metrics.jsonl)",
+        help="metrics.jsonl 輸出路徑 (預設: ~/.claude/metrics.jsonl)",
     )
     backfill.set_defaults(func=cmd_backfill)
 
     report = sub.add_parser(
         "report",
-        help="aggregate views over metrics.jsonl",
+        help="從 metrics.jsonl 產出彙整視圖",
         description=(
-            "Read metrics.jsonl and print one of three diagnostic views. "
-            "Does NOT take --adapter — metrics.jsonl is already adapter-"
-            "agnostic by construction.\n"
+            "讀取 metrics.jsonl 並印出三種診斷視圖之一。不接受 --adapter "
+            "—metrics.jsonl 本身已經是 adapter-agnostic 的正規化資料。\n"
             "\n"
-            "  channels      total auto vs slash invocations across sessions\n"
-            "  usage         per-skill table with channel split\n"
-            "  dead-skills   whitelisted skills that have never been invoked"
+            "  channels      所有 session 的 auto vs slash 總計\n"
+            "  usage         每個 skill 的使用次數及 channel 拆解表格\n"
+            "  dead-skills   whitelist 內從未被觸發過的 skill"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     report.add_argument(
         "kind",
         choices=["usage", "dead-skills", "channels"],
-        help="which view to print",
+        help="要印出哪一種視圖",
     )
     report.add_argument(
         "--metrics",
-        help="metrics.jsonl path (default: ~/.claude/metrics.jsonl)",
+        help="metrics.jsonl 路徑 (預設: ~/.claude/metrics.jsonl)",
     )
     report.add_argument(
         "--no-filter",
         action="store_true",
-        help="usage report only: include built-ins / unknown names not in the whitelist",
+        help="只用於 usage 視圖: 連同 whitelist 外的內建/未知名稱也一併列出",
     )
     report.set_defaults(func=cmd_report)
 
