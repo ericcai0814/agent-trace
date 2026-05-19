@@ -17,13 +17,13 @@ python3.13 -m venv .venv
 agent-trace backfill --adapter claude-code
 
 # 看 skill 使用表（按 channel 拆開 auto vs slash）
-agent-trace report usage
+agent-trace reports usage
 
 # 看 channel 分布總計
-agent-trace report channels
+agent-trace reports channels
 
 # 看哪些 skill 從沒被觸發過
-agent-trace report dead-skills
+agent-trace reports dead-skills
 
 # 單檔 ingest，可直接接 SessionEnd hook
 agent-trace ingest --adapter claude-code <path-to-transcript.jsonl>

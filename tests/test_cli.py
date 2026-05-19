@@ -46,7 +46,7 @@ def test_report_channels_runs_on_real_metrics(tmp_path: Path, monkeypatch):
     metrics.write_text(json.dumps(rec) + "\n")
     buf = io.StringIO()
     with redirect_stdout(buf):
-        rc = main(["report", "channels", "--metrics", str(metrics)])
+        rc = main(["reports", "channels", "--metrics", str(metrics)])
     assert rc == 0
     out = buf.getvalue()
     assert "auto" in out and "slash" in out

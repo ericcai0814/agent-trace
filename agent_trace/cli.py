@@ -3,7 +3,7 @@
 子命令:
   ingest    解析單一 transcript,將該 session 的 record 寫到 stdout
   backfill  掃描指定 adapter 的所有 transcript,附加到 metrics.jsonl
-  report    彙整 metrics.jsonl,印出 usage / dead-skill / channel 視圖
+  reports   彙整 metrics.jsonl,印出 usage / dead-skill / channel 視圖
 """
 
 from __future__ import annotations
@@ -151,9 +151,9 @@ def build_parser() -> argparse.ArgumentParser:
             "  agent-trace backfill --adapter claude-code\n"
             "\n"
             "  # 三種診斷視圖 (不需要 --adapter,直接讀正規化資料)\n"
-            "  agent-trace report channels       # auto vs slash 比例\n"
-            "  agent-trace report usage          # 每個 skill 的 channel 拆解\n"
-            "  agent-trace report dead-skills    # 從未被觸發的 skill\n"
+            "  agent-trace reports channels       # auto vs slash 比例\n"
+            "  agent-trace reports usage          # 每個 skill 的 channel 拆解\n"
+            "  agent-trace reports dead-skills    # 從未被觸發的 skill\n"
             "\n"
             "  # 單檔 ingest (設計給 SessionEnd hook 串接)\n"
             "  agent-trace ingest --adapter claude-code <transcript.jsonl>\n"
@@ -195,7 +195,7 @@ def build_parser() -> argparse.ArgumentParser:
     backfill.set_defaults(func=cmd_backfill)
 
     report = sub.add_parser(
-        "report",
+        "reports",
         help="從 metrics.jsonl 產出彙整視圖",
         description=(
             "讀取 metrics.jsonl 並印出三種診斷視圖之一。不接受 --adapter "
