@@ -2,6 +2,22 @@
 
 跨 agent 的 telemetry pipeline——把 AI coding agent 的 transcript 抽成正規化事件流，做 skill/agent 使用量分析、dead-skill 偵測、行為 eval baseline。
 
+## How this was built
+
+agent-trace is built with a spec-driven workflow: I designed the telemetry concept, event schema, and CLI surface, then generated the Python implementation via Claude Code and reviewed/integrated it before shipping.
+
+### What I authored vs what AI implemented
+
+| Authored by me | Implemented via Claude Code |
+|---|---|
+| Cross-agent telemetry concept & motivation (the "Why") | Python pipeline implementation |
+| Normalized event schema across Claude Code / Gemini CLI / Codex | JSONL streaming parser & ingest logic |
+| Skill/agent usage metrics taxonomy (`usage` / `channels` / `dead-skills`) | CLI scaffolding & command structure |
+| Adapter abstraction for multi-agent transcript ingestion | Test fixtures |
+| Phase 1 scope & roadmap (`Status` section below) | Backfill flow & SessionEnd hook design (Phase 2 plan) |
+
+If you spot an issue, please open one — I read and respond to all issues, including ones in the AI-generated code paths.
+
 ## Status
 
 ✅ Phase 2 — Claude Code adapter、CLI、SessionEnd hook 自動串接全部完成。下一階段是第二個 adapter (Gemini CLI / Codex,Phase 3,條件性)。
